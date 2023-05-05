@@ -1,0 +1,18 @@
+### POST /shorten
+POST http://localhost:8080/shorten
+Content-Type: application/json
+
+{
+    "url": "https://www.google.com"
+}
+
+### POST /shorten - URL inválida
+POST http://localhost:8080/shorten
+Content-Type: application/json
+
+{
+    "url": ""
+}
+
+### GET /{shortURL} - URL encurtada existente
+GET http://localhost:8080/aaaaeab

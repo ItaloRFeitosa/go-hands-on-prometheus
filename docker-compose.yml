@@ -20,7 +20,7 @@ services:
     container_name: grafana
     depends_on:
       - prometheus
-
+  
   # cadvisor:
   #   image: gcr.io/cadvisor/cadvisor:latest
   #   container_name: cadvisor
@@ -40,3 +40,12 @@ services:
     container_name: app
     ports:
     - 8080:8080
+
+  k6:
+    image: grafana/k6:latest
+    command: ["run", "/scripts/shorten_link.js"]
+    user: $DOCKER_USER
+    depends_on:
+      - app
+    volumes:
+      - ./k6:/scripts
