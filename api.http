@@ -15,4 +15,4 @@ Content-Type: application/json
 }
 
 ### GET /{shortURL} - URL encurtada existente
-GET http://localhost:8080/aaaaeab
+GET http://localhost:8080/aaaaaab

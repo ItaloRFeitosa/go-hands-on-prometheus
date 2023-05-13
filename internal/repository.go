@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+
+	"gorm.io/gorm"
 )
 
 type LinkRepository interface {
@@ -27,7 +29,7 @@ func NewMemoryRepository() *LinkMemoryRepository {
 func (repo *LinkMemoryRepository) Get(ctx context.Context, id int64) (*Link, error) {
 	link, ok := repo.links.Load(id)
 	if !ok {
-		return nil, fmt.Errorf("link not found for id %d", id)
+		return nil, fmt.Errorf("link not found")
 	}
 
 	return link.(*Link), nil
@@ -40,4 +42,24 @@ func (repo *LinkMemoryRepository) Save(ctx context.Context, link *Link) error {
 
 	repo.links.Store(link.ID, link)
 	return nil
+}
+
+type LinkPostgresRepository struct {
+	db *gorm.DB
+}
+
+func NewLinkPostgresRepository(db *gorm.DB) *LinkPostgresRepository {
+	return &LinkPostgresRepository{
+		db,
+	}
+}
+
+func (repo *LinkPostgresRepository) Get(ctx context.Context, id int64) (*Link, error) {
+	link := new(Link)
+	err := repo.db.WithContext(ctx).First(link, "id = ?", id).Error
+	return link, err
+}
+
+func (repo *LinkPostgresRepository) Save(ctx context.Context, link *Link) error {
+	return repo.db.WithContext(ctx).Save(link).Error
 }

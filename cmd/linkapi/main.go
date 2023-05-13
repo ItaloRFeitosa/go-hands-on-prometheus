@@ -1,9 +1,10 @@
 package main
 
-import "github.com/italorfeitosa/go-hands-on-prometheus/internal"
+import (
+	"github.com/italorfeitosa/go-hands-on-prometheus/internal"
+)
 
 func main() {
-	c := internal.NewContainer()
 
-	c.StartServer("8080")
+	internal.StartServer(internal.NewContainer(), "8080")
 }

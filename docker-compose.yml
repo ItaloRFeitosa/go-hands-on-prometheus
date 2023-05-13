@@ -3,49 +3,78 @@ version: '3'
 services:
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
     # depends_on: 
     #   - cadvisor
+    user: root
     ports:
       - 9090:9090
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
 
   grafana:
     image: grafana/grafana
     ports:
       - "3000:3000"
-    container_name: grafana
     depends_on:
       - prometheus
   
-  # cadvisor:
-  #   image: gcr.io/cadvisor/cadvisor:latest
-  #   container_name: cadvisor
-  #   user: root
-  #   ports:
-  #   - 8081:8080
-  #   volumes:
-  #   - /:/rootfs:ro
-  #   - /var/run:/var/run:rw
-  #   - /sys:/sys:ro
-  #   - /var/run/docker.sock:/var/run/docker.sock
-  #   depends_on:
-  #   - redis
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    user: root
+    ports:
+    - 8081:8080
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:rw
+    - /sys:/sys:ro
+    - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - withprom=true
+    depends_on:
+    - postgres
+    - app
 
   app:
     build: .
-    container_name: app
+    environment:
+      DEFAULT_DATABASE_URL: "postgres://root:root@postgres:5432/linkapi?sslmode=disable"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    labels:
+      - withprom=true
     ports:
     - 8080:8080
 
-  k6:
-    image: grafana/k6:latest
-    command: ["run", "/scripts/shorten_link.js"]
-    user: $DOCKER_USER
-    depends_on:
-      - app
+  postgres:
+    image: "postgres:14-alpine"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      PGDATA: /data/postgres
+      POSTGRES_DB: linkapi
     volumes:
-      - ./k6:/scripts
+      - ./.docker/postgres:/data/postgres
+    ports:
+      - "5432:5432"
+
+  postgres_exporter:
+    image: "quay.io/prometheuscommunity/postgres-exporter"
+    environment:
+      DATA_SOURCE_NAME: "postgres://root:root@postgres:5432/postgres?sslmode=disable"
+    ports:
+      - "9187:9187"
+    labels:
+      - withprom=true
+    
+  # k6:
+  #   image: grafana/k6:latest
+  #   command: ["run", "/scripts/shorten_link.js"]
+  #   user: $DOCKER_USER
+  #   depends_on:
+  #     - app
+  #   volumes:
+  #     - ./k6:/scripts
