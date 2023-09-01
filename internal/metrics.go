@@ -36,9 +36,13 @@ func (m *Metrics) Middleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		c.Next()
 
+		path := c.Route().Path
+		if path == "/metrics" {
+			return nil
+		}
+
 		code := c.Response().StatusCode()
 		method := c.Route().Method
-		path := c.Route().Path
 
 		m.requestsTotal.WithLabelValues(strconv.Itoa(code), method, path).Inc()
 
