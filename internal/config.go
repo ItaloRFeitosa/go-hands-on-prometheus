@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/italorfeitosa/go-hands-on-prometheus/pkg/fiberutils"
-	"github.com/italorfeitosa/go-hands-on-prometheus/pkg/gormutils"
+	"github.com/italorfeitosa/go-hands-on-prometheus/pkg/fiberutil"
+	"github.com/italorfeitosa/go-hands-on-prometheus/pkg/gormutil"
 )
 
 type Container struct {
@@ -17,10 +17,10 @@ type Container struct {
 
 	FiberApp *fiber.App
 
-	LinkMemoryRepository   *LinkMemoryRepository
-	LinkPostgresRepository *LinkPostgresRepository
+	LinkMemoryDAO   *LinkMemoryDAO
+	LinkPostgresDAO *LinkPostgresDAO
 
-	LinkController *LinkController
+	LinkController *LinkHandler
 
 	Base62Codec Base62Codec
 
@@ -34,7 +34,7 @@ func NewContainer() *Container {
 
 	provideDB(c)
 	provideMetrics(c)
-	provideLinkRepository(c)
+	provideLinkDAO(c)
 	provideLinkController(c)
 	provideFiberApp(c)
 
@@ -45,7 +45,7 @@ func NewContainer() *Container {
 }
 
 func provideDB(c *Container) {
-	c.DB = gormutils.Connect()
+	c.DB = gormutil.Connect()
 
 	err := c.DB.AutoMigrate(&Link{})
 	if err != nil {
@@ -55,7 +55,7 @@ func provideDB(c *Container) {
 
 func provideFiberApp(c *Container) {
 	c.FiberApp = fiber.New(fiber.Config{
-		ErrorHandler: fiberutils.ErrorHandler,
+		ErrorHandler: fiberutil.ErrorHandler,
 	})
 }
 
@@ -63,12 +63,12 @@ func provideMetrics(c *Container) {
 	c.Metrics = NewMetrics()
 }
 
-func provideLinkRepository(c *Container) {
-	c.LinkMemoryRepository = NewMemoryRepository()
+func provideLinkDAO(c *Container) {
+	c.LinkMemoryDAO = NewLinkMemoryDAO()
 
-	c.LinkPostgresRepository = NewLinkPostgresRepository(c.DB)
+	c.LinkPostgresDAO = NewLinkPostgresDAO(c.DB)
 }
 
 func provideLinkController(c *Container) {
-	c.LinkController = NewLinkController(c.LinkPostgresRepository, c.Base62Codec)
+	c.LinkController = NewLinkHandler(c.LinkPostgresDAO, c.Base62Codec)
 }

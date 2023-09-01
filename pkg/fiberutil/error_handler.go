@@ -1,4 +1,4 @@
-package fiberutils
+package fiberutil
 
 import (
 	"errors"

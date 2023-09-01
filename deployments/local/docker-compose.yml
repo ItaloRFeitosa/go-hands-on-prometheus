@@ -1,25 +1,26 @@
-version: '3'
+version: '3.5'
 
 services:
   prometheus:
     image: prom/prometheus
-    # depends_on: 
-    #   - cadvisor
     user: root
     ports:
       - 9090:9090
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./tools/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock
 
   grafana:
     image: grafana/grafana
+    user: root
     ports:
       - "3000:3000"
     depends_on:
       - prometheus
+    volumes:
+      - ./.docker/grafana:/var/lib/grafana
   
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -38,7 +39,9 @@ services:
     - app
 
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: ./build/Dockerfile.dev
     environment:
       DEFAULT_DATABASE_URL: "postgres://root:root@postgres:5432/linkapi?sslmode=disable"
     restart: unless-stopped
@@ -48,6 +51,8 @@ services:
       - withprom=true
     ports:
     - 8080:8080
+    volumes:
+    - ./:/app
 
   postgres:
     image: "postgres:14-alpine"
@@ -70,11 +75,13 @@ services:
     labels:
       - withprom=true
     
-  # k6:
-  #   image: grafana/k6:latest
-  #   command: ["run", "/scripts/shorten_link.js"]
-  #   user: $DOCKER_USER
-  #   depends_on:
-  #     - app
-  #   volumes:
-  #     - ./k6:/scripts
+  k6:
+    image: grafana/k6:latest
+    command: ["run", "/scripts/shorten_link.js"]
+    user: $DOCKER_USER
+    profiles:
+      - "loadtest"
+    depends_on:
+      - app
+    volumes:
+      - ./tools/k6:/scripts

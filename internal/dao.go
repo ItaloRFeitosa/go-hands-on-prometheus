@@ -9,24 +9,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type LinkRepository interface {
+type LinkDAO interface {
 	Get(ctx context.Context, id int64) (*Link, error)
 	Save(ctx context.Context, link *Link) error
 }
 
-type LinkMemoryRepository struct {
+type LinkMemoryDAO struct {
 	links sync.Map
 
 	idgen atomic.Int64
 }
 
-func NewMemoryRepository() *LinkMemoryRepository {
-	return &LinkMemoryRepository{
+func NewLinkMemoryDAO() *LinkMemoryDAO {
+	return &LinkMemoryDAO{
 		links: sync.Map{},
 	}
 }
 
-func (repo *LinkMemoryRepository) Get(ctx context.Context, id int64) (*Link, error) {
+func (repo *LinkMemoryDAO) Get(ctx context.Context, id int64) (*Link, error) {
 	link, ok := repo.links.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("link not found")
@@ -35,7 +35,7 @@ func (repo *LinkMemoryRepository) Get(ctx context.Context, id int64) (*Link, err
 	return link.(*Link), nil
 }
 
-func (repo *LinkMemoryRepository) Save(ctx context.Context, link *Link) error {
+func (repo *LinkMemoryDAO) Save(ctx context.Context, link *Link) error {
 	if link.ID == 0 {
 		link.ID = repo.idgen.Add(1)
 	}
@@ -44,22 +44,22 @@ func (repo *LinkMemoryRepository) Save(ctx context.Context, link *Link) error {
 	return nil
 }
 
-type LinkPostgresRepository struct {
+type LinkPostgresDAO struct {
 	db *gorm.DB
 }
 
-func NewLinkPostgresRepository(db *gorm.DB) *LinkPostgresRepository {
-	return &LinkPostgresRepository{
+func NewLinkPostgresDAO(db *gorm.DB) *LinkPostgresDAO {
+	return &LinkPostgresDAO{
 		db,
 	}
 }
 
-func (repo *LinkPostgresRepository) Get(ctx context.Context, id int64) (*Link, error) {
+func (repo *LinkPostgresDAO) Get(ctx context.Context, id int64) (*Link, error) {
 	link := new(Link)
 	err := repo.db.WithContext(ctx).First(link, "id = ?", id).Error
 	return link, err
 }
 
-func (repo *LinkPostgresRepository) Save(ctx context.Context, link *Link) error {
+func (repo *LinkPostgresDAO) Save(ctx context.Context, link *Link) error {
 	return repo.db.WithContext(ctx).Save(link).Error
 }

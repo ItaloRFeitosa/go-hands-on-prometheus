@@ -7,6 +7,7 @@ import (
 
 func registerRoutes(c *Container) {
 	c.FiberApp.Get("/metrics", c.Metrics.Handler())
+	c.FiberApp.Get("/redirect-test", RedirectTest)
 	c.FiberApp.Post("/shorten", c.LinkController.Shorten)
 	c.FiberApp.Get("/:slug", c.LinkController.Redirect)
 }
