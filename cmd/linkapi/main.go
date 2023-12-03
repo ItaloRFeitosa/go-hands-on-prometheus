@@ -5,6 +5,5 @@ import (
 )
 
 func main() {
-
 	internal.StartServer(internal.NewContainer(), "8080")
 }

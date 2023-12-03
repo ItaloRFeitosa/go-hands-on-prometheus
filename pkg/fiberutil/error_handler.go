@@ -1,28 +1,22 @@
 package fiberutil
 
 import (
-	"errors"
 	"log"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/italorfeitosa/go-hands-on-prometheus/pkg/errs"
 )
 
 func ErrorHandler(ctx *fiber.Ctx, err error) error {
 	var (
-		message = "Internal Server Error"
-		code    = fiber.StatusInternalServerError
-		e       *fiber.Error
+		code = errs.HttpStatusCode(err)
 	)
 
-	if errors.As(err, &e) {
-		code = e.Code
-		message = e.Message
-	} else {
-		log.Println("[unknown error] %w", err)
+	if code == http.StatusInternalServerError {
+		log.Printf("[internal error]: %#+v\n", err)
+		return ctx.SendStatus(http.StatusInternalServerError)
 	}
 
-	return ctx.Status(code).JSON(fiber.Map{
-		"code":    code,
-		"message": message,
-	})
+	return ctx.Status(code).JSON(err)
 }

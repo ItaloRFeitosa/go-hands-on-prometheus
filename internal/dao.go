@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -57,9 +58,21 @@ func NewLinkPostgresDAO(db *gorm.DB) *LinkPostgresDAO {
 func (repo *LinkPostgresDAO) Get(ctx context.Context, id int64) (*Link, error) {
 	link := new(Link)
 	err := repo.db.WithContext(ctx).First(link, "id = ?", id).Error
-	return link, err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrLinkNotFound.WithArgs(id)
+	}
+
+	if err != nil {
+		return nil, ErrDatabaseInternals.WithError(err)
+	}
+
+	return link, nil
 }
 
 func (repo *LinkPostgresDAO) Save(ctx context.Context, link *Link) error {
-	return repo.db.WithContext(ctx).Save(link).Error
+	if err := repo.db.WithContext(ctx).Save(link).Error; err != nil {
+		return ErrDatabaseInternals.WithError(err)
+	}
+
+	return nil
 }

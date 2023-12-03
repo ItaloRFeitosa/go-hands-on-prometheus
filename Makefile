@@ -14,6 +14,15 @@ build:
 up:
 	COMPOSE_USER=$(COMPOSE_USER) docker-compose --project-directory . -f $(COMPOSE_FILE) up
 
+start_k6:
+	COMPOSE_USER=$(COMPOSE_USER) docker-compose --project-directory . -f $(COMPOSE_FILE) start k6
+
+up_load_test:
+	COMPOSE_USER=$(COMPOSE_USER) docker-compose --project-directory . -f $(COMPOSE_FILE) --profile loadtest up
+
+stop:
+	COMPOSE_USER=$(COMPOSE_USER) docker-compose --project-directory . -f $(COMPOSE_FILE) stop
+
 up_build: 
 	COMPOSE_USER=$(COMPOSE_USER) docker-compose --project-directory . -f $(COMPOSE_FILE) up --build
 

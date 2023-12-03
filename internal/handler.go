@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,15 +19,15 @@ func (h *LinkHandler) Shorten(c *fiber.Ctx) error {
 	link := new(Link)
 
 	if err := c.BodyParser(link); err != nil {
-		return fiber.NewError(http.StatusBadRequest, err.Error())
+		return ErrLinkInvalid.WithError(err)
 	}
 
 	if err := validate.Struct(link); err != nil {
-		return fiber.NewError(http.StatusBadRequest, err.Error())
+		return ErrLinkInvalid.WithError(err)
 	}
 
 	if err := h.linkDAO.Save(c.UserContext(), link); err != nil {
-		return fiber.NewError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	link.Slug = h.codec.Encode(link.ID)
@@ -40,8 +39,7 @@ func (h *LinkHandler) Redirect(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	link, err := h.linkDAO.Get(c.UserContext(), h.codec.Decode(slug))
 	if err != nil {
-		err = fmt.Errorf("error on redirect with slug { %s }: %w", slug, err)
-		return fiber.NewError(http.StatusNotFound, err.Error())
+		return err
 	}
 
 	return c.Redirect(link.URL)
